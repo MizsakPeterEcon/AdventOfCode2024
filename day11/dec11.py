@@ -1,10 +1,14 @@
+from functools import cache, lru_cache
+
+
 def read_data(data_file: str) -> list[str]:
     with open(data_file, "r") as file:
         _loaded_data = file.read()
     return _loaded_data.strip().split(" ")
 
 
-def apply_rules(data: list[str]) -> list[str]:
+# not used any more
+def blink_1_stone(data: list[str]) -> list[str]:
     to_insert = []
     for i, value in enumerate(data):
         if value == "0":
@@ -24,16 +28,39 @@ def apply_rules(data: list[str]) -> list[str]:
     return data
 
 
-def blink(data: list[str], times: int) -> list[str]:
-    for i in range(times):
-        data = apply_rules(data)
-        print(f"blink {i + 1} done")
-    return data
+@lru_cache(maxsize=None)
+def count_stones(stone: str, blinks_left: int) -> int:
+    if blinks_left == 0:
+        return 1
+
+    if stone == "0":
+        return count_stones("1", blinks_left - 1)
+
+    stone_len = len(stone)
+
+    if stone_len % 2:
+        return count_stones(str(int(stone) * 2024), blinks_left - 1)
+
+    half_len = stone_len // 2
+    first_half = stone[:half_len]
+    second_half = str(int(stone[half_len:]))
+    return count_stones(first_half, blinks_left - 1) + count_stones(
+        second_half, blinks_left - 1
+    )
+
+
+def blink(data: list[str], times: int) -> int:
+    all_stones = 0
+    for stone in data:
+        ret_val = count_stones(stone, times)
+        print(f"stone {stone} has {ret_val} stones")
+        all_stones += ret_val
+    return all_stones
 
 
 if __name__ == "__main__":
-    data = read_data("day11\\input.txt")
+    data = read_data("day11\\input_short.txt")
     print(data)
-    result = blink(data, 25)
-    print(result)
-    print(f"after 25 blinks, there are {len(result)} stones")
+    result = blink(data, 5)
+    # print(result)
+    print(f"after 75 blinks, there are {result} stones")
